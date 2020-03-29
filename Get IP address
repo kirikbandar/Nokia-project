@@ -1,0 +1,20 @@
+package com.example.ip_address;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
+import android.text.format.Formatter;
+import android.util.Log;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+        Log.i("IP address of device", ip);
+    }
+}
