@@ -1,0 +1,38 @@
+double dellat=(13.05-12.90)/10;
+        double dellong=(77.70-77.55)/10;
+        double[] latrange = new double[10];
+        double[] longrange = new double[10];
+        int[] mSignalStrength = new int[100];
+        String[] service=new String[100]; 
+        double[][] location = new double[100][2];
+        for(int i=0;i<100;i++)
+        {
+            //assimong one signal provider for now
+            service[i]="Vodafone";
+            //popultaes the signal strengths using Random function, assuming min strength in db to be in between min=-100db and max= -15db
+            mSignalStrength[i]=(int)(Math.random() * ((-100 - (-15)) + 1)) - 100;
+        }
+        
+        for(int i=0;i<10;i++)
+        {
+            //populates the lat and long arrays to hold 10 values across the expanse of bangalore (whose constants were used while defining dellat and dellong
+            latrange[i]=12.90 + i*dellat;
+            longrange[i]=77.55 + i*dellong;
+        }
+        int k=0;
+        for(int i=0;i<10;i++)
+        {
+            for(int j=0;j<10;j++)
+            {
+                location[k][0]=latrange[i];
+                location[k][1]=longrange[j];
+                k++;
+            }
+        }
+
+        for(int i=0;i<100;i++)
+        {
+            //service[i] is to be replaced with the telephonyManager.getSimCarrierIdName() ideally
+            User user = new User(mSignalStrength[i],service[i],location[i][0],location[i][1]);
+            mDatabaseReference.child("users").child(userId).setValue(user);
+        }
