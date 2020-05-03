@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "555182714292",
+    "firebase_url": "https://androidlocation-cdecd.firebaseio.com",
+    "project_id": "androidlocation-cdecd",
+    "storage_bucket": "androidlocation-cdecd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555182714292:android:1cd4fe33eee3654c09d6e1",
+        "android_client_info": {
+          "package_name": "com.example.nokiafirsttry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "555182714292-9f0auoqfhuf2c6gatlktl1n12t84ulgo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nokiafirsttry",
+            "certificate_hash": "1ac021f7bf59295625bcdac978cc57efc0c0bcf5"
+          }
+        },
+        {
+          "client_id": "555182714292-mch0h6352ssodcumtc4hocuk32ogfuhj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIRSAH5wzYAImdgYqxUAxerGu02EeHzrw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "555182714292-mch0h6352ssodcumtc4hocuk32ogfuhj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

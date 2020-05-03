@@ -3,6 +3,8 @@ package info.androidhive.androidlocation;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -11,10 +13,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.appcompat.app.AppCompatActivity;
+import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +39,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.karumi.dexter.BuildConfig;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -41,20 +49,27 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.text.DateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-/**
- * Reference: https://github.com/googlesamples/android-play-location/tree/master/LocationUpdates
- */
-
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    TelephonyManager telephonyManager;
+    private FirebaseDatabase mDatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference mDatabaseReference = mDatabase.getReference("users");
+    private String userId;
+    public static int rssi;
+    public static double lat;
+    public static double lon;
 
     @BindView(R.id.location_result)
     TextView txtLocationResult;
@@ -98,13 +113,64 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-
+        telephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
         // initialize the necessary libraries
         init();
 
         // restore the values from saved instance state
         restoreValuesFromBundle(savedInstanceState);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.Contact) {
+            String recepientEmail = ""; // either set to destination email or leave empty
+            Intent email = new Intent(Intent.ACTION_SENDTO);
+            email.putExtra(Intent.EXTRA_EMAIL, new String[]{"signalmap@gmail.com"});
+            email.putExtra(Intent.EXTRA_SUBJECT, "subject");
+            email.putExtra(Intent.EXTRA_TEXT, "mailbody");
+            email.setType("message/rfc822");
+            email.setData(Uri.parse("mailto:" + recepientEmail));
+            startActivity(Intent.createChooser(email, "Choose an Email client :"));
+        }
+
+        if (id == R.id.Feedback)
+        {
+            try
+            {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
+            }
+            catch(ActivityNotFoundException e)
+            {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("http://play.google.com/store/apps/details?id="+ getPackageName())));
+
+            }
+
+
+        }
+
+        if(id==R.id.About)
+        {
+            Intent intent = new Intent(this,About.class);
+            startActivity(intent);
+
+
+        }
+
+        return super.onOptionsItemSelected(item);
+
+
+    }
+
+
 
     private void init() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -162,11 +228,22 @@ public class MainActivity extends AppCompatActivity {
      */
     private void updateLocationUI() {
         if (mCurrentLocation != null) {
-            txtLocationResult.setText(
-                    "Lat: " + mCurrentLocation.getLatitude() + ", " +
-                            "Lng: " + mCurrentLocation.getLongitude()
-            );
+            String ssignal=telephonyManager.getAllCellInfo().toString();
+            String[] parts = ssignal.split(" ");
+            int nonly=0-(Integer.parseInt(parts[16].replaceAll("[^0-9]","")));
+            String spname= telephonyManager.getSimOperatorName();
 
+            txtLocationResult.setText(
+                    "Lat: " +mCurrentLocation.getLatitude() + ", " +
+                            "Lng: " + mCurrentLocation.getLongitude()+
+                            " RSSI: " + nonly + " Service Provider Name: "+ spname
+            );
+            rssi=nonly;
+            lat=mCurrentLocation.getLatitude();
+            lon=mCurrentLocation.getLongitude();
+            userId = mDatabaseReference.push().getKey();
+            User user = new User(nonly,spname,getIPAddress(true),mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude());
+            mDatabaseReference.child("users").child(userId).setValue(user);
             // giving a blink animation on TextView
             txtLocationResult.setAlpha(0);
             txtLocationResult.animate().alpha(1).setDuration(300);
@@ -282,6 +359,7 @@ public class MainActivity extends AppCompatActivity {
     public void stopLocationButtonClick() {
         mRequestingLocationUpdates = false;
         stopLocationUpdates();
+        openActivity2();
     }
 
     public void stopLocationUpdates() {
@@ -296,7 +374,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
-
+    public void openActivity2(){
+        Intent intent = new Intent(this,activity2.class);
+        startActivity(intent);
+    }
     @OnClick(R.id.btn_get_last_location)
     public void showLastKnownLocation() {
         if (mCurrentLocation != null) {
@@ -309,6 +390,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             // Check for the integer request code originally supplied to startResolutionForResult().
             case REQUEST_CHECK_SETTINGS:
@@ -325,7 +407,32 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
 
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { } // for now eat exceptions
+        return "";
+    }
     private void openSettings() {
         Intent intent = new Intent();
         intent.setAction(
@@ -367,3 +474,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+
