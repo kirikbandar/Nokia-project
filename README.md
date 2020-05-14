@@ -23,6 +23,8 @@ related issues could be solved to a good extent, with ease.
 5. Firebase Console
 6. Python 3.6
 
-#Features
+# Features
 
-1.
+1. Real Time Heatmap.
+2. K-Map Clustering For Heatmap generation.
+3. Navigation to Closest point with Better Coverage.
